@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neon Cyber Jump: Perfect Distance Edition</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: #010103;
+            font-family: 'Orbitron', sans-serif;
+            user-select: none;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100vw;
+            height: 100vh;
+        }
+        #gameContainer {
+            position: relative;
+            width: 600px;
+            height: 800px;
+            box-shadow: 0 0 60px rgba(0, 255, 204, 0.15);
+            border-radius: 0px; 
+            overflow: hidden;
+            border: 2px solid rgba(255, 255, 255, 0.08);
+        }
+        canvas {
+            display: block;
+        }
+        #ui {
+            position: absolute;
+            top: 25px;
+            left: 25px;
+            right: 25px;
+            display: flex;
+            justify-content: space-between;
+            color: white;
+            font-size: 16px;
+            letter-spacing: 2px;
+            pointer-events: none;
+            z-index: 10;
+        }
+        #stageName {
+            background: rgba(0, 0, 0, 0.7);
+            padding: 6px 18px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #00ffcc;
+            box-shadow: 0 0 15px rgba(0, 255, 204, 0.2);
+        }
+        #heightScore { color: #ff007f; font-size: 24px; font-weight: 900; text-shadow: 0 0 10px #ff007f; }
+        
+        .overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(2, 2, 8, 0.94);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            z-index: 100; 
+            text-align: center;
+            cursor: pointer;
+            padding: 0 40px;
+            box-sizing: border-box;
+        }
+        .overlay h1 { font-size: 38px; margin: 0 0 10px 0; letter-spacing: 3px; text-shadow: 0 0 25px #00ffcc; color: #00ffcc; }
+        .overlay p { font-size: 15px; color: #8a99ad; margin: 4px 0; letter-spacing: 1px; }
+        .hidden { display: none !important; }
+
+        .guide-box {
+            text-align: left;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 20px;
+            margin-top: 30px;
+            border-radius: 4px;
+            font-size: 12px;
+            color: #a0aec0;
+            line-height: 1.8;
+            width: 85%;
+        }
+        .guide-title {
+            color: #ffff00;
+            font-weight: 700;
+            margin-bottom: 8px;
+            letter-spacing: 1px;
+            border-bottom: 1px dashed rgba(255, 255, 255, 0.15);
+            padding-bottom: 4px;
+        }
+        .highlight-pink { color: #ff007f; font-weight: 700; }
+        .highlight-cyan { color: #00ffcc; font-weight: 700; }
+
+        #milestoneOverlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(5, 0, 15, 0.88);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 15;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+        }
+        #milestoneSub {
+            font-size: 14px;
+            font-weight: 500;
+            color: #00ffcc;
+            letter-spacing: 6px;
+            margin-bottom: 8px;
+            text-shadow: 0 0 10px #00ffcc;
+        }
+        #milestoneText {
+            font-size: 46px;
+            font-weight: 900;
+            color: #ffff00;
+            letter-spacing: 4px;
+            text-shadow: 0 0 30px #ffff00, 0 0 60px #ff007f;
+            transform: scale(0.8);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        #milestoneOverlay.active {
+            opacity: 1;
+        }
+        #milestoneOverlay.active #milestoneText {
+            transform: scale(1);
+        }
+    </style>
+</head>
+<body>
+
+    <div id="gameContainer">
+        <div id="ui">
+            <div>ALTITUDE: <span id="heightScore">0</span>M</div>
+            <div id="stageName">🌱 GROUND ZONE</div>
+        </div>
+        
+        <div id="statusOverlay" class="overlay" onclick="triggerStart()">
+            <h1 id="msgTitle">DISTANCE & HEIGHT TUNED</h1>
+            <p id="msgSub">PRESS [SPACEBAR] OR CLICK ANYWHERE TO LAUNCH</p>
+            
+            <div class="guide-box">
+                <div class="guide-title">🕹️ CONTROLS & MECHANICS</div>
+                • <span class="highlight-cyan">MOVE:</span> Left / Right Arrow Keys (← , →) | <span class="highlight-cyan">JUMP:</span> Up Arrow Key (↑)<br>
+                • <span class="highlight-cyan">Remodeled Generation Distances:</span> Vertical gap is slightly increased and horizontal spacing is tightly restricted to guarantee perfect parabolic jump landing with zero headbumping.<br><br>
+                
+                <div class="guide-title">⚠️ THREAT LEVEL & ENEMIES</div>
+                • <span class="highlight-pink">100M [SPEED WALL LASER]:</span><br>
+                &nbsp;&nbsp;Laser orbs will materialize from the outer side walls and quickly cross horizontally.<br><br>
+                
+                • <span class="highlight-pink">200M [CHASER ALIEN FROM PIT]:</span><br>
+                &nbsp;&nbsp;A spiked wall alien tracking system ascends from the bottom death zone.<br><br>
+                
+                • <span class="highlight-pink">300M+ [DISASTER ZONE]:</span> Combined threat of accelerated crossing lasers and the bottom tracker!
+            </div>
+        </div>
+
+        <div id="milestoneOverlay">
+            <div id="milestoneSub">NEXT LEVEL</div>
+            <div id="milestoneText">WELL DONE!</div>
+        </div>
+
+        <canvas id="gameCanvas"></canvas>
+    </div>
+
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const heightScoreUI = document.getElementById('heightScore');
+const stageNameUI = document.getElementById('stageName');
+const overlay = document.getElementById('statusOverlay');
+const milestoneOverlay = document.getElementById('milestoneOverlay');
+const milestoneText = document.getElementById('milestoneText');
+const msgTitle = document.getElementById('msgTitle');
+const msgSub = document.getElementById('msgSub');
+
+canvas.width = 600;
+canvas.height = 800;
+
+let gameState = 'START'; 
+let cameraY = 0;
+let highestY = 0;
+let shakeTime = 0; 
+const mapEndY = 15000; 
+
+let milestone100Triggered = false;
+let milestone200Triggered = false;
+let milestone300Triggered = false;
+let milestoneTimer = 0;
+
+const player = {
+    x: 285,
+    y: 50, 
+    w: 32, 
+    h: 46, 
+    vx: 0,
+    vy: 0,
+    moveSpeed: 7.8, 
+    gravity: 0.46, 
+    jumpForce: 13.8, // Tailored jump force to match fixed platform intervals
+    grounded: true
+};
+
+let laserSpawnTimer = 80;
+let lasers = [];
+
+const bottomAlien = {
+    y: -300, 
+    w: canvas.width,
+    h: 40,
+    baseSpeed: 1.3,
+    active: false
+};
+
+const keys = {};
+let platforms = [];
+let stars = [];
+let clouds = [];
+let particles = []; 
+
+const STAGES = [
+    { name: "🌱 GROUND ZONE", minY: 0, maxY: 3000, bgTop: "#08081a", bgBottom: "#02020a" },
+    { name: "☁️ STRATOSPHERE", minY: 3000, maxY: 6500, bgTop: "#030721", bgBottom: "#08081a" },
+    { name: "🌌 EXOSPHERE", minY: 6500, maxY: 10000, bgTop: "#010212", bgBottom: "#030721" },
+    { name: "🚀 DEEP SPACE", minY: 10000, maxY: 13500, bgTop: "#000002", bgBottom: "#010212" },
+    { name: "👑 COSMIC APEX", minY: 13500, maxY: 16000, bgTop: "#05000a", bgBottom: "#000002" }
+];
+
+function resetGame() {
+    cameraY = 0;
+    highestY = 0;
+    shakeTime = 0;
+    
+    player.x = 285;
+    player.y = 50;
+    player.vx = 0;
+    player.vy = 0;
+    player.grounded = true;
+
+    initEnvironment();
+    initPlatforms();
+}
+
+function initEnvironment() {
+    stars = []; clouds = []; particles = []; lasers = [];
+    laserSpawnTimer = 80;
+    bottomAlien.active = false; bottomAlien.y = -300;
+    milestone100Triggered = false; milestone200Triggered = false; milestone300Triggered = false;
+    milestoneTimer = 0;
+    
+    for(let i=0; i<90; i++) {
+        stars.push({
+            x: Math.random() * canvas.width,
+            y: Math.random() * mapEndY + 1500,
+            size: Math.random() * 2.5 + 0.5,
+            color: ['#fff', '#00ffcc', '#ff007f', '#ffff00'][Math.floor(Math.random()*4)],
+            blinkSpeed: 0.03 + Math.random()*0.03,
+            alpha: Math.random()
+        });
+    }
+    for(let i=0; i<12; i++) {
+        clouds.push({
+            x: Math.random() * canvas.width - 60,
+            y: Math.random() * 5000 + 1000,
+            w: Math.random() * 130 + 80,
+            h: Math.random() * 25 + 15,
+            speed: Math.random() * 0.15 + 0.05
+        });
+    }
+}
+
+// ★ Remodeled platform distribution logic (optimized height and horizontal step limits)
+function initPlatforms() {
+    platforms = [];
+    platforms.push({ x: 0, y: 0, w: canvas.width, h: 50, type: 'ground', vx: 0 });
+
+    let currentY = 140; 
+    let prevX = canvas.width / 2 - 50;
+
+    while (currentY < mapEndY - 500) {
+        let w = 115 - (currentY / 180); 
+        if (w < 85) w = 85; 
+        
+        // Boundaries restricted to prevent the platform from spawning too far horizontally
+        let minX = Math.max(25, prevX - 160);
+        let maxX = Math.min(canvas.width - w - 25, prevX + 160);
+        
+        let x = minX + Math.random() * (maxX - minX);
+        const minHorizontalShift = 70; 
+        
+        // Maintain a healthy zigzag rhythm while preventing unreachable distances
+        if (Math.abs(x - prevX) < minHorizontalShift) {
+            if (prevX > canvas.width / 2) {
+                x = prevX - (minHorizontalShift + Math.random() * 40);
+            } else {
+                x = prevX + minHorizontalShift + Math.random() * 40;
+            }
+        }
+
+        if (x < 25) x = 25;
+        if (x + w > canvas.width - 25) x = canvas.width - w - 25;
+
+        let vx = 0;
+        if (currentY > 4000 && Math.random() > 0.4) {
+            vx = (Math.random() > 0.5 ? 1 : -1) * (1.1 + (currentY / 5500));
+        }
+
+        platforms.push({ x: x, y: currentY, w: w, h: 16, vx: vx });
+        prevX = x;
+        
+        // ★ Elevated to a balanced vertical gap (125~135) to reach peak point smoothly
+        currentY += 125 + Math.random() * 10; 
+    }
+
+    platforms.push({ x: canvas.width/2 - 120, y: mapEndY - 250, w: 240, h: 30, type: 'goal', vx: 0 });
+}
+
+function createParticles(x, y, color, count=5) {
+    for(let i=0; i<count; i++) {
+        particles.push({
+            x: x, y: y,
+            vx: (Math.random() - 0.5) * 4,
+            vy: (Math.random() - 0.5) * 3 - 1,
+            radius: Math.random() * 3 + 1,
+            alpha: 1,
+            color: color
+        });
+    }
+}
+
+function triggerStart() {
+    if (gameState !== 'PLAYING') {
+        resetGame();
+        gameState = 'PLAYING';
+        overlay.classList.add('hidden');
+    }
+}
+
+window.addEventListener('keydown', e => {
+    keys[e.code] = true;
+    if (e.code === 'Space') {
+        e.preventDefault(); 
+        triggerStart();
+    }
+});
+window.addEventListener('keyup', e => keys[e.code] = false);
+window.addEventListener('click', triggerStart); 
+
+function displayMilestone(text) {
+    milestoneText.innerText = text;
+    milestoneOverlay.classList.add('active');
+    milestoneTimer = 65; 
+}
+
+function update() {
+    if (gameState !== 'PLAYING') return;
+
+    if (milestoneTimer > 0) {
+        milestoneTimer--;
+        if (milestoneTimer <= 0) {
+            milestoneOverlay.classList.remove('active');
+        }
+    }
+
+    if (keys['ArrowLeft']) {
+        player.vx = -player.moveSpeed;
+    } else if (keys['ArrowRight']) {
+        player.vx = player.moveSpeed;
+    } else {
+        player.vx = 0; 
+    }
+
+    if (keys['ArrowUp'] && player.grounded) {
+        player.vy = player.jumpForce;
+        player.grounded = false;
+        shakeTime = 4; 
+        createParticles(player.x + player.w/2, player.y, '#ff007f', 10);
+    }
+
+    if (!player.grounded) player.vy -= player.gravity;
+    player.x += player.vx;
+    player.y += player.vy;
+
+    if (player.x < 0) { player.x = 0; player.vx = 0; }
+    if (player.x + player.w > canvas.width) { player.x = canvas.width - player.w; player.vx = 0; }
+
+    if(!player.grounded && Math.random() > 0.2) {
+        createParticles(player.x + player.w/2, player.y, '#ff7700', 1);
+    }
+
+    let currentAltitude = Math.floor(player.y / 10);
+
+    if (currentAltitude >= 100 && !milestone100Triggered) {
+        milestone100Triggered = true;
+        displayMilestone("WELL DONE!");
+    }
+    if (currentAltitude >= 200 && !milestone200Triggered) {
+        milestone200Triggered = true;
+        displayMilestone("GETTING HARDER");
+    }
+    if (currentAltitude >= 300 && !milestone300Triggered) {
+        milestone300Triggered = true;
+        displayMilestone("YOUR ON FIRE!!");
+    }
+    
+    let laserAllowed = (currentAltitude >= 100 && currentAltitude < 200) || (currentAltitude >= 300);
+    let alienAllowed = (currentAltitude >= 200);
+
+    if (laserAllowed) {
+        laserSpawnTimer--;
+        if (laserSpawnTimer <= 0) {
+            let fromLeft = Math.random() > 0.5;
+            let startX = fromLeft ? -25 : canvas.width + 25;
+            let startY = player.y + (Math.random() * 260 - 60); 
+            
+            let speed = 2.2; 
+            let vx = fromLeft ? speed : -speed;
+            let vy = 0; 
+            
+            if (Math.random() > 0.4) {
+                let targetY = player.y;
+                let diffY = targetY - startY;
+                let diffX = fromLeft ? canvas.width : -canvas.width;
+                let angle = Math.atan2(diffY, Math.abs(diffX));
+                vy = Math.sin(angle) * speed;
+            }
+
+            lasers.push({
+                x: startX,
+                y: startY,
+                vx: vx,
+                vy: vy,
+                radius: 10
+            });
+            
+            laserSpawnTimer = 90 + Math.random() * 40; 
+        }
+    }
+
+    if (alienAllowed) {
+        if (!bottomAlien.active) {
+            bottomAlien.active = true;
+            bottomAlien.y = cameraY - 120; 
+        }
+        
+        let dynamicSpeed = bottomAlien.baseSpeed + (currentAltitude / 1400);
+        bottomAlien.y += dynamicSpeed;
+
+        if (bottomAlien.y < cameraY - 180) {
+            bottomAlien.y = cameraY - 180;
+        }
+
+        if (player.y < bottomAlien.y + bottomAlien.h && player.y + player.h > bottomAlien.y) {
+            gameState = 'GAMEOVER';
+            msgTitle.innerText = "👾 CONSUMED 👾";
+            msgSub.innerText = "THE CHASER ALIEN FROM BELOW CAUGHT YOU. CLICK / SPACE TO REBOOT.";
+            overlay.classList.remove('hidden');
+            return;
+        }
+    } else {
+        bottomAlien.active = false;
+    }
+
+    let onAnyPlatform = false;
+    for (let p of platforms) {
+        if (p.vx !== 0) {
+            p.x += p.vx;
+            if (p.x <= 0 || p.x + p.w >= canvas.width) p.vx *= -1;
+        }
+
+        // Platform landing system
+        if (player.vy <= 0 &&
+            player.x + player.w > p.x &&
+            player.x < p.x + p.w &&
+            player.y >= p.y + p.h - 8 && 
+            player.y <= p.y + p.h + 8) {
+            
+            if (p.type === 'goal') {
+                gameState = 'CLEAR';
+                msgTitle.innerText = "MISSION CLEAR";
+                msgSub.innerText = "YOU CONQUERED THE COSMOS! CLICK OR SPACE TO RESET.";
+                overlay.classList.remove('hidden');
+                return;
+            }
+
+            if(!player.grounded) {
+                shakeTime = 5; 
+                createParticles(player.x + player.w/2, p.y + p.h, '#ffff00', 5);
+            }
+
+            player.y = p.y + p.h;
+            player.vy = 0;
+            player.grounded = true;
+            onAnyPlatform = true;
+            if(p.vx !== 0) player.x += p.vx; 
+        }
+        
+        // Bottom head-bump deflection softening system
+        else if (player.vy > 0 &&
+            player.x + player.w > p.x &&
+            player.x < p.x + p.w &&
+            player.y + player.h >= p.y &&
+            player.y + player.h - player.vy <= p.y + 8) {
+            
+            player.y = p.y - player.h - 1; 
+            player.vy = -2.0; 
+            shakeTime = 4;
+            createParticles(player.x + player.w/2, p.y, '#ff0055', 6);
+        }
+    }
+    
+    if(!onAnyPlatform && player.y > 50) player.grounded = false;
+
+    for (let i = lasers.length - 1; i >= 0; i--) {
+        let l = lasers[i];
+        l.x += l.vx;
+        l.y += l.vy;
+
+        if (l.x + l.radius > player.x && l.x - l.radius < player.x + player.w &&
+            l.y + l.radius > player.y && l.y - l.radius < player.y + player.h) {
+            gameState = 'GAMEOVER';
+            msgTitle.innerText = "💥 VAPORIZED 💥";
+            msgSub.innerText = "CROSS WALL LASER INTERCEPTED YOU. CLICK OR SPACE TO RESET.";
+            overlay.classList.remove('hidden');
+            return;
+        }
+
+        if (l.x < -60 || l.x > canvas.width + 60) lasers.splice(i, 1);
+    }
+
+    for(let c of clouds) { c.x += c.speed; if(c.x > canvas.width) c.x = -c.w; }
+    for(let i = particles.length - 1; i >= 0; i--) {
+        let p = particles[i]; p.x += p.vx; p.y += p.vy; p.alpha -= 0.04;
+        if(p.alpha <= 0) particles.splice(i, 1);
+    }
+
+    if (player.y < cameraY - 100) {
+        gameState = 'GAMEOVER';
+        msgTitle.innerText = "GAME OVER";
+        msgSub.innerText = `SCORE: ${Math.floor(highestY / 10)}M | CLICK OR SPACE TO RESPOND`;
+        overlay.classList.remove('hidden');
+    }
+
+    if (player.y > highestY) highestY = player.y;
+    if (player.y - cameraY > canvas.height * 0.35) {
+        cameraY += ((player.y - canvas.height * 0.35) - cameraY) * 0.12;
+    }
+
+    heightScoreUI.innerText = Math.floor(highestY / 10);
+    let currentStage = STAGES.find(s => player.y >= s.minY && player.y < s.maxY) || STAGES[STAGES.length - 1];
+    stageNameUI.innerText = currentStage.name;
+}
+
+function draw() {
+    let currentStage = STAGES.find(s => cameraY >= s.minY && cameraY < s.maxY) || STAGES[STAGES.length - 1];
+    let grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    grad.addColorStop(0, currentStage.bgTop); grad.addColorStop(1, currentStage.bgBottom);
+    ctx.fillStyle = grad; ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    ctx.save();
+    if (shakeTime > 0) {
+        ctx.translate((Math.random() - 0.5) * 6, (Math.random() - 0.5) * 6);
+        shakeTime--;
+    }
+    ctx.translate(0, cameraY); 
+
+    if (cameraY < 7000) {
+        ctx.fillStyle = "rgba(255, 255, 255, 0.15)";
+        for (let c of clouds) {
+            ctx.beginPath(); let screenY = canvas.height - c.y;
+            ctx.arc(c.x, screenY, c.h, 0, Math.PI*2);
+            ctx.arc(c.x + c.w*0.3, screenY - c.h*0.3, c.h*1.2, 0, Math.PI*2);
+            ctx.arc(c.x + c.w*0.6, screenY, c.h*0.9, 0, Math.PI*2); ctx.fill();
+        }
+    }
+
+    if (cameraY > 1200) {
+        for (let s of stars) {
+            s.alpha += s.blinkSpeed; if(s.alpha > 1 || s.alpha < 0.1) s.blinkSpeed *= -1;
+            ctx.fillStyle = s.color; ctx.globalAlpha = Math.max(0, Math.min(1, s.alpha));
+            ctx.fillRect(s.x, canvas.height - s.y, s.size, s.size);
+        }
+        ctx.globalAlpha = 1.0;
+    }
+
+    for(let p of particles) {
+        ctx.fillStyle = p.color; ctx.globalAlpha = p.alpha;
+        ctx.beginPath(); ctx.arc(p.x, canvas.height - p.y, p.radius, 0, Math.PI*2); ctx.fill();
+    }
+    ctx.globalAlpha = 1.0;
+
+    for(let l of lasers) {
+        ctx.fillStyle = '#ff0055'; ctx.shadowBlur = 18; ctx.shadowColor = '#ff0055';
+        ctx.beginPath(); ctx.arc(l.x, canvas.height - l.y, l.radius, 0, Math.PI*2); ctx.fill();
+        ctx.shadowBlur = 0;
+    }
+
+    let timeHue = (Date.now() / 22) % 360;
+    for (let p of platforms) {
+        let sY = canvas.height - p.y - p.h;
+        if (p.type === 'ground') {
+            ctx.fillStyle = '#00ffcc'; ctx.shadowBlur = 15; ctx.shadowColor = '#00ffcc';
+            ctx.fillRect(p.x, sY, p.w, p.h); ctx.shadowBlur = 0;
+        } else if (p.type === 'goal') {
+            ctx.fillStyle = '#ff007f'; ctx.shadowBlur = 30; ctx.shadowColor = '#ff007f';
+            ctx.fillRect(p.x, sY, p.w, p.h); ctx.shadowBlur = 0;
+        } else {
+            let platformHue = (timeHue + p.y / 6) % 360;
+            let neonColor = `hsl(${platformHue}, 100%, 55%)`;
+            ctx.fillStyle = neonColor; ctx.shadowBlur = 15; ctx.shadowColor = neonColor;
+            ctx.fillRect(p.x, sY, p.w, p.h); 
+            ctx.shadowBlur = 0;
+        }
+    }
+
+    if (bottomAlien.active) {
+        let aY = canvas.height - bottomAlien.y - bottomAlien.h;
+        ctx.fillStyle = '#00ffaa'; ctx.shadowBlur = 25; ctx.shadowColor = '#00ffaa';
+        ctx.fillRect(0, aY, bottomAlien.w, bottomAlien.h);
+        
+        ctx.fillStyle = '#ffffff';
+        for(let sx=0; sx<canvas.width; sx+=20) {
+            ctx.beginPath();
+            ctx.moveTo(sx, aY);
+            ctx.lineTo(sx+10, aY-15);
+            ctx.lineTo(sx+20, aY);
+            ctx.closePath();
+            ctx.fill();
+        }
+        ctx.shadowBlur = 0;
+    }
+
+    ctx.save();
+    ctx.translate(player.x + player.w/2, canvas.height - player.y - player.h/2);
+    
+    ctx.fillStyle = '#ffffff'; ctx.shadowBlur = 18; ctx.shadowColor = '#ff007f';
+    ctx.beginPath();
+    ctx.moveTo(0, -player.h/2); 
+    ctx.lineTo(player.w/2, -player.h/6); 
+    ctx.lineTo(player.w/2, player.h/2); 
+    ctx.lineTo(-player.w/2, player.h/2); 
+    ctx.lineTo(-player.w/2, -player.h/6); 
+    ctx.closePath();
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    ctx.fillStyle = '#010103'; ctx.beginPath();
+    ctx.moveTo(0, -player.h/3); ctx.lineTo(6, -player.h/8); ctx.lineTo(-6, -player.h/8);
+    ctx.closePath(); ctx.fill();
+
+    ctx.fillStyle = '#ff007f';
+    ctx.beginPath(); ctx.moveTo(-player.w/2, player.h/6); ctx.lineTo(-player.w/2 - 6, player.h/2); ctx.lineTo(-player.w/2, player.h/2); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(player.w/2, player.h/6); ctx.lineTo(player.w/2 + 6, player.h/2); ctx.lineTo(player.w/2, player.h/2); ctx.closePath(); ctx.fill();
+
+    ctx.restore();
+    ctx.restore();
+}
+
+function loop() {
+    update();
+    draw();
+    requestAnimationFrame(loop);
+}
+
+initEnvironment();
+initPlatforms();
+loop();
+</script>
+</body>
+</html>
